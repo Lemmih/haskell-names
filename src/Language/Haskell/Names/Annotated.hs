@@ -45,11 +45,16 @@ annotateRec _ sc a = go sc a where
 lookupValue :: QName l -> Scope -> Scoped l
 lookupValue qn sc = Scoped nameInfo (ann qn)
   where
+    typeInfo e =
+      case Global.lookupType qn $ getL gTable sc of
+        Global.Result r -> GlobalType r
+        Global.Error e -> ScopeError e
+        Global.Special -> ScopeError e
     nameInfo =
       case Local.lookupValue qn $ getL lTable sc of
         Right r -> LocalValue r
         _ ->
           case Global.lookupValue qn $ getL gTable sc of
             Global.Result r -> GlobalValue r
-            Global.Error e -> ScopeError e
+            Global.Error e -> typeInfo e
             Global.Special -> None

@@ -26,6 +26,7 @@ import Language.Haskell.Names.Annotated
 import Language.Haskell.Names.Open
 import Language.Haskell.Names.ModuleSymbols
 import Language.Haskell.Names.SyntaxUtils
+import Language.Haskell.Names.Types
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import Distribution.HaskellSuite
 import qualified Distribution.ModuleName as Cabal
@@ -135,7 +136,8 @@ annotationTest file = goldenVsFile file golden out run
     out = file <.> "out"
     run = do
       mod <- parseAndPrepare file
-      let annotatedMod = annotate initialScope mod
+      annotatedMod <- flip evalNamesModuleT [] $ do
+        annotateModule Haskell98 [] mod
       -- writeFile out $ ppShow $ fmap void annotatedMod
       writeFile out $ printAnns annotatedMod
 
@@ -158,6 +160,8 @@ formatInfo (LocalValue loc) =
   printf "a local value defined at %s" $ formatLoc loc
 formatInfo (ScopeError (ENotInScope {})) = "not in scope"
 formatInfo None = "none"
+formatInfo (GlobalType loc) =
+  printf "the type %s" $ ppOrigName (origName loc)
 
 formatAnn :: String -> Scoped SrcSpan -> String
 formatAnn name (Scoped info loc) =
